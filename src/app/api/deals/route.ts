@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { DealStage } from "@prisma/client"
 
 const dealSchema = z.object({
   title: z.string().min(1, "Judul deal wajib diisi"),
@@ -10,8 +9,6 @@ const dealSchema = z.object({
   stage: z.enum(["LEAD", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON", "LOST"]).default("LEAD"),
   clientId: z.string().min(1, "Client wajib dipilih"),
   closeDate: z.string().optional(),
-  // closeDate pakai string karena dari form HTML
-  // nanti kita convert ke Date sebelum disimpan
 })
 
 export async function GET() {
@@ -24,12 +21,8 @@ export async function GET() {
     const deals = await prisma.deal.findMany({
       where: { userId: session.user.id },
       include: {
-        client: {
-          select: { name: true, company: true },
-        },
+        client: { select: { name: true, company: true } },
       },
-      // include → ambil juga data client yang terkait
-      // supaya di halaman deals bisa tampilkan nama client
       orderBy: { createdAt: "desc" },
     })
 
@@ -60,20 +53,13 @@ export async function POST(request: Request) {
 
     const { closeDate, ...rest } = validation.data
 
-    const stageMap: Record<string, number> = {}
-
     const deal = await prisma.deal.create({
       data: {
-        title: validation.data.title,
-        value: validation.data.value ?? null,
-        stage: validation.data.stage as any,
-        clientId: validation.data.clientId,
+        ...rest,
         userId: session.user.id,
-        closeDate: validation.data.closeDate
-          ? new Date(validation.data.closeDate)
-          : null,
-  },
-})
+        closeDate: closeDate ? new Date(closeDate) : null,
+      },
+    })
 
     return NextResponse.json(deal, { status: 201 })
 

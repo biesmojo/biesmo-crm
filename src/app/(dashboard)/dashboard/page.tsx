@@ -6,7 +6,6 @@ import {
   FileText,
   DollarSign,
 } from "lucide-react"
-import { DealStage } from "@prisma/client"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -18,7 +17,7 @@ export default async function DashboardPage() {
       prisma.deal.count({ where: { userId } }),
       prisma.note.count({ where: { userId } }),
       prisma.deal.findMany({
-        where: { userId, stage: DealStage.WON },
+        where: { userId, stage: "WON" },
         select: { value: true },
       }),
     ])
